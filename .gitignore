@@ -43,3 +43,6 @@ next-env.d.ts
 # socket server
 socket-server/node_modules/
 
+
+!.env.example
+
