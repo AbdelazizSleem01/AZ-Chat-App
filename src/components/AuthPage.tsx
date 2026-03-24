@@ -34,7 +34,9 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
 
     try {
       const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+      const baseUrl =
+        process.env.NEXT_PUBLIC_API_URL ||
+        (typeof window !== 'undefined' ? window.location.origin : '');
       const response = await fetch(`${baseUrl}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
