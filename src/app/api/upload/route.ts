@@ -1,7 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { existsSync } from 'fs';
-import path from 'path';
+import crypto from 'crypto';
+
+const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || '';
+const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || '';
+const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || '';
+
+const buildSignature = (params: Record<string, string>) => {
+  const sorted = Object.keys(params)
+    .sort()
+    .map((key) => `${key}=${params[key]}`)
+    .join('&');
+  return crypto
+    .createHash('sha1')
+    .update(sorted + CLOUDINARY_API_SECRET)
+    .digest('hex');
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,26 +28,45 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
+    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
+      return NextResponse.json(
+        { error: 'Cloudinary config missing' },
+        { status: 500 }
+      );
     }
 
-    const timestamp = Date.now();
-    const filename = `${timestamp}-${file.name}`;
-    const filepath = path.join(uploadsDir, filename);
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+    const folder = 'az-chat';
+    const signature = buildSignature({ folder, timestamp });
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filepath, buffer);
+    const uploadForm = new FormData();
+    uploadForm.append('file', file);
+    uploadForm.append('api_key', CLOUDINARY_API_KEY);
+    uploadForm.append('timestamp', timestamp);
+    uploadForm.append('folder', folder);
+    uploadForm.append('signature', signature);
 
-    const fileUrl = `/uploads/${filename}`;
+    const uploadRes = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`,
+      {
+        method: 'POST',
+        body: uploadForm
+      }
+    );
+    const uploadData = await uploadRes.json();
+
+    if (!uploadRes.ok) {
+      return NextResponse.json(
+        { error: uploadData?.error?.message || 'Upload failed' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      fileUrl,
-      filename: file.name,
-      fileSize: file.size
+      fileUrl: uploadData.secure_url,
+      filename: uploadData.original_filename,
+      fileSize: uploadData.bytes
     });
   } catch (error) {
     console.error('Error uploading file:', error);

@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { ObjectId } from 'mongodb';
 import { getDb } from '@/lib/mongodb';
 
 export async function PATCH(
-  request: Request,
-  { params }: { params: { taskId: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ taskId: string }> }
 ) {
   try {
     const userId = request.headers.get('x-user-id');
@@ -12,7 +12,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Missing user id' }, { status: 400 });
     }
 
-    const taskId = params?.taskId;
+    const { taskId } = await params;
     if (!taskId || !ObjectId.isValid(taskId)) {
       return NextResponse.json({ error: 'Invalid task id' }, { status: 400 });
     }
@@ -79,8 +79,8 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { taskId: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ taskId: string }> }
 ) {
   try {
     const userId = request.headers.get('x-user-id');
@@ -88,7 +88,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Missing user id' }, { status: 400 });
     }
 
-    const taskId = params?.taskId;
+    const { taskId } = await params;
     if (!taskId || !ObjectId.isValid(taskId)) {
       return NextResponse.json({ error: 'Invalid task id' }, { status: 400 });
     }
@@ -104,3 +104,4 @@ export async function DELETE(
     return NextResponse.json({ error: 'Failed to delete task' }, { status: 500 });
   }
 }
+
