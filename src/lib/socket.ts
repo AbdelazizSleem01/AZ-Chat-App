@@ -4,9 +4,13 @@ let socket: Socket | null = null;
 
 export const getSocket = () => {
   if (!socket) {
-    socket = io('http://localhost:3001', {
-      autoConnect: true,
-      reconnection: true,
+    const envUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
+    const fallbackUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    const url = envUrl || fallbackUrl;
+    const shouldConnect = Boolean(envUrl);
+    socket = io(url, {
+      autoConnect: shouldConnect,
+      reconnection: shouldConnect,
     });
   }
   return socket;

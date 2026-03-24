@@ -68,3 +68,24 @@ CLOUDINARY_API_SECRET=YOUR_SECRET
 ---
 
 If you need help, open an issue or contact the maintainer.
+
+## Socket Server (Realtime)
+A lightweight Socket.io server is included in `socket-server/`.
+
+### Local
+```bash
+cd socket-server
+npm install
+npm run dev
+```
+
+### Production
+Deploy `socket-server/` to Render/Railway/VPS and set:
+```
+CLIENT_ORIGIN=https://your-vercel-domain.vercel.app
+```
+
+Then add to Vercel env:
+```
+NEXT_PUBLIC_SOCKET_URL=https://your-socket-domain
+```
