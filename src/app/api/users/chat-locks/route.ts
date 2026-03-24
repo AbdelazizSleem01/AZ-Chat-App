@@ -40,7 +40,7 @@ const serializeLocks = (locks?: User['chatLocks']): Record<string, ChatLockState
   return result;
 };
 
-const getLockEntry = (locks: User['chatLocks'] | undefined, peerId: string): StoredChatLock | undefined => {
+const getLockEntry = (locks: Record<string, StoredChatLock> | undefined, peerId: string): StoredChatLock | undefined => {
   if (!locks || typeof locks !== 'object') return undefined;
   return (locks as Record<string, StoredChatLock>)[peerId];
 };

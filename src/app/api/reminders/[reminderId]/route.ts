@@ -20,11 +20,10 @@ export async function DELETE(
     const db = await getDb();
     const remindersCollection = db.collection('reminders');
 
-    if (ObjectId.isValid(reminderId)) {
-      await remindersCollection.deleteOne({ _id: new ObjectId(reminderId), userId });
-    } else {
-      await remindersCollection.deleteOne({ _id: reminderId, userId });
-    }
+    const query = ObjectId.isValid(reminderId)
+      ? { _id: new ObjectId(reminderId) }
+      : { _id: reminderId };
+    await remindersCollection.deleteOne({ ...query, userId } as any);
 
     return NextResponse.json({ ok: true });
   } catch (error) {
@@ -32,3 +31,6 @@ export async function DELETE(
     return NextResponse.json({ error: 'Failed to delete reminder' }, { status: 500 });
   }
 }
+
+
+
