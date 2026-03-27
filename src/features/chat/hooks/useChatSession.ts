@@ -6,6 +6,7 @@ import { CurrentUser } from '../types/chat';
 
 type PersistedUser = Partial<CurrentUser> & { _id?: string };
 
+
 export function useChatSession() {
   const currentUser = useChatStore((state) => state.currentUser);
   const setCurrentUser = useChatStore((state) => state.setCurrentUser);
@@ -31,6 +32,12 @@ export function useChatSession() {
         avatar: parsed.avatar,
         statusMessage: parsed.statusMessage,
       });
+      const parsed = JSON.parse(raw) as CurrentUser;
+      if (!parsed.id || !parsed.username || !parsed.email) {
+        setCurrentUser(null);
+        return;
+      }
+      setCurrentUser(parsed);
     } catch {
       setCurrentUser(null);
     }

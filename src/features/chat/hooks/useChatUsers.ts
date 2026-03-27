@@ -27,7 +27,7 @@ export function useChatUsers(currentUserId?: string) {
     setError(null);
 
     try {
-      const allUsers = await fetchUsers(currentUserId);
+      const allUsers = await fetchUsers();
       const normalized = toUsersWithId(allUsers as UserWithId[]).filter((user) => user._id !== currentUserId);
       setUsers(normalized);
 
