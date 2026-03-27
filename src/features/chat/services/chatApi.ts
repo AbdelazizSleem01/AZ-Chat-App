@@ -1,38 +1,56 @@
 import { Message, User } from '@/types';
 import { CurrentUser } from '../types/chat';
 
+type ApiEnvelope<T> = {
+  error?: string;
+} & T;
+
+function authHeaders(userId: string) {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+  return {
+    'Content-Type': 'application/json',
+    'x-user-id': userId,
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
 async function parseJson<T>(response: Response): Promise<T> {
+  const json = (await response.json().catch(() => ({}))) as T & { error?: string };
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `Request failed: ${response.status}`);
+    throw new Error(json?.error || `Request failed: ${response.status}`);
   }
-  return response.json();
+  return json;
 }
 
-export async function fetchUsers(): Promise<User[]> {
-  const response = await fetch('/api/users', { cache: 'no-store' });
-  return parseJson<User[]>(response);
-}
-
-export async function fetchConversation(userId: string, otherUserId: string): Promise<Message[]> {
-  const response = await fetch(`/api/messages?userId=${userId}&otherUserId=${otherUserId}`, {
+export async function fetchUsers(currentUserId: string): Promise<User[]> {
+  const response = await fetch('/api/users', {
     cache: 'no-store',
+    headers: authHeaders(currentUserId),
   });
-  return parseJson<Message[]>(response);
+  const payload = await parseJson<ApiEnvelope<{ users: User[] }>>(response);
+  return payload.users || [];
+}
+
+export async function fetchConversation(currentUserId: string, otherUserId: string): Promise<Message[]> {
+  const response = await fetch(`/api/messages?otherUserId=${otherUserId}`, {
+    cache: 'no-store',
+    headers: authHeaders(currentUserId),
+  });
+  const payload = await parseJson<ApiEnvelope<{ messages: Message[] }>>(response);
+  return payload.messages || [];
 }
 
 export async function sendTextMessage(currentUser: CurrentUser, receiverId: string, content: string): Promise<Message> {
   const response = await fetch('/api/messages', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authHeaders(currentUser.id),
     body: JSON.stringify({
-      senderId: currentUser.id,
       receiverId,
       content,
       type: 'text',
-      senderUsername: currentUser.username,
     }),
   });
 
-  return parseJson<Message>(response);
+  const payload = await parseJson<ApiEnvelope<{ message: Message }>>(response);
+  return payload.message;
 }
