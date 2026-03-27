@@ -876,14 +876,12 @@ export default function ChatApp() {
       }, 45000);
 
       socket.on('message', (message: Message) => {
-         // If we are currently chatting with the sender, add to messages
          if (selectedUserId && (message.senderId === selectedUserId || message.receiverId === selectedUserId)) {
             setMessages(prev => {
                if (prev.some(m => m._id === message._id)) return prev;
                return [...prev, message];
             });
          } else {
-            // Increment unread count
             setUnreadCounts(prev => ({
                ...prev,
                [message.senderId]: (prev[message.senderId] || 0) + 1
